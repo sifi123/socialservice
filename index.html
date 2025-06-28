@@ -345,68 +345,35 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>           <!-- ========= ONE & ONLY <script type="module"> ========= -->
-<script type="module">
-  /* Firebase imports */
+    </style>           <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getAuth,
-           createUserWithEmailAndPassword,
-           signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, doc,
+    updateDoc, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-  /* Config */
   const firebaseConfig = {
     apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
     authDomain: "social-service-app-fa1c1.firebaseapp.com",
-    projectId:  "social-service-app-fa1c1",
+    projectId: "social-service-app-fa1c1",
     storageBucket: "social-service-app-fa1c1.appspot.com",
     messagingSenderId: "51249725413",
     appId: "1:51249725413:web:99b181ba01407bdc19f90c"
   };
 
-  /* Init once */
-  const app  = initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
   const auth = getAuth(app);
-  const db   = getFirestore(app);        // (اگر Firestore چاہیے)
 
-  /* ---------- SIGN UP ---------- */
-  async function signup() {
-    const name  = signupName.value.trim();
-    const email = signupEmail.value.trim();
-    const pass  = signupPassword.value;
-
-    if (!name || !email || !pass) { alert("تمام فیلڈ بھریں"); return; }
-
-    try {
-      await createUserWithEmailAndPassword(auth, email, pass);
-      alert("✅ اکاؤنٹ بن گیا! اب لاگ اِن کریں۔");
-      showLogin();                       // آپ کا پہلے سے موجود فنکشن
-    } catch (e) {
-      if (e.code === "auth/email-already-in-use")
-        alert("❌ یہ ای‑میل پہلے سے رجسٹرڈ ہے، صرف لاگ اِن کریں۔");
-      else  alert("Signup error: " + e.message);
-    }
-  }
-
-  /* ---------- LOG IN ---------- */
-  async function login() {
-    const email = loginEmail.value.trim();
-    const pass  = loginPassword.value;
-
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      await generateTasks();             // اگر آپ نے tasks والا فنکشن رکھا ہے
-      showScreen("dashboardScreen");
-    } catch (e) {
-      alert("Login error: " + e.message);
-    }
-  }
-
-  /* HTML بٹن access کیلئے */
-  window.signup = signup;
-  window.login  = login;
+  // ✅ Make these globally available
+  window.db = db;
+  window.auth = auth;
+  window.firebaseAuthFns = { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword };
+  window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
 </script>
-<!-- ========= END ========= -->
 
 </head>
 <body>
