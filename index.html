@@ -770,8 +770,7 @@ function showSignup() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('signupForm').style.display = 'block';
 }
-const { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = window.firebaseAuthFns;
-const { getDocs, collection, doc, updateDoc, query, orderBy, addDoc } = window.firestoreFns;
+
 
 async function login() {
   const email    = loginEmail.value.trim();
@@ -791,9 +790,6 @@ async function login() {
     console.error(err);
   }
 }
-
-const { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = window.firebaseAuthFns;
-const { getDocs, collection, doc, updateDoc, query, orderBy, addDoc } = window.firestoreFns;
 
 async function signup() {
   const name     = signupName.value.trim();
