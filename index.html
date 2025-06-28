@@ -345,104 +345,24 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>          <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    </style>           <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
-    authDomain: "social-service-app-fa1c1.firebaseapp.com",
-    projectId: "social-service-app-fa1c1",
-    storageBucket: "social-service-app-fa1c1.appspot.com",
-    messagingSenderId: "51249725413",
-    appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-
-  window.db = db;
-  window.auth = auth;
-  window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
-
-  window.signup = async function () {
-    const name = document.getElementById('signupName').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-
-    if (!name || !email || !password) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    try {
-      const { createUserWithEmailAndPassword } = window.firebaseAuthFns;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      alert('✅ Account created. Please login.');
-      showLogin();
-    } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        alert('⚠️ Email already in use. Please login.');
-      } else {
-        alert('❌ Signup failed: ' + error.message);
-      }
-    }
-  };
-
-  window.login = async function () {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-      const { signInWithEmailAndPassword } = window.firebaseAuthFns;
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      userData.email = user.email;
-      userData.name = user.email.split('@')[0];
-      updateUserData();
-      showScreen('dashboardScreen');
-      generateTasks();
-    } catch (error) {
-      alert('❌ Login failed: ' + error.message);
-    }
-  };
-
-  window.logout = async function () {
-    const { signOut } = window.firebaseAuthFns;
-    await signOut(auth);
-    userData = {
-      name: '',
-      email: '',
-      balance: 0,
-      totalOrders: 0,
-      totalEarnings: 0,
-      completedTasks: 0,
-      earnedToday: 0
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+      authDomain: "social-service-app-fa1c1.firebaseapp.com",
+      projectId: "social-service-app-fa1c1",
+      storageBucket: "social-service-app-fa1c1.appspot.com",
+      messagingSenderId: "51249725413",
+      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
     };
-    tasks = [];
-    showScreen('authScreen');
-    showLogin();
-  };
 
-  window.onload = function () {
-    const { onAuthStateChanged } = window.firebaseAuthFns;
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userData.email = user.email;
-        userData.name = user.email.split('@')[0];
-        showScreen('dashboardScreen');
-        updateUserData();
-        generateTasks();
-      } else {
-        showScreen('authScreen');
-      }
-    });
-  };
-</script>
-
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  </script>
 </head>
 <body>
     <div class="container">
@@ -805,50 +725,51 @@ function showSignup() {
     document.getElementById('signupForm').style.display = 'block';
 }
 
-async function login() {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
+function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
 
-  try {
-    const auth = window.auth;
-    const { signInWithEmailAndPassword } = window.firebaseAuthFns;
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    userData.email = user.email;
-    userData.name = user.email.split('@')[0];
-    updateUserData();
-    showScreen('dashboardScreen');
-    generateTasks();
-  } catch (error) {
-    alert('❌ Login failed: ' + error.message);
-  }
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+
+    if (savedUser && email === savedUser.email && password === savedUser.password) {
+        userData.name = savedUser.name;
+        userData.email = savedUser.email;
+        userData.balance = 0;
+        updateUserData();
+        showScreen('dashboardScreen');
+        generateTasks();
+    } else {
+        alert('Invalid login. Please check your email and password.');
+    }
 }
 
 
+function signup() {
+    const name = document.getElementById('signupName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
 
-async function signup() {
-  const name = document.getElementById('signupName').value;
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
+    if (name && email && password) {
+        const existingUser = JSON.parse(localStorage.getItem('user'));
 
-  if (!name || !email || !password) {
-    alert('Please fill in all fields');
-    return;
-  }
+        if (existingUser && existingUser.email === email) {
+            alert('❌ This email is already registered. Please login instead.');
+            showLogin(); // optional: move user to login
+            return;
+        }
 
-  try {
-    const auth = window.auth;
-    const { createUserWithEmailAndPassword } = window.firebaseAuthFns;
-    await createUserWithEmailAndPassword(auth, email, password);
-    alert('✅ Account created successfully! Now login to continue.');
-    showLogin();
-  } catch (error) {
-    if (error.code === 'auth/email-already-in-use') {
-      alert('⚠️ This email is already registered. Please login instead.');
+        const user = {
+            name,
+            email,
+            password
+        };
+
+        localStorage.setItem('user', JSON.stringify(user));
+        alert('✅ Account created successfully! Now login to continue.');
+        showLogin();
     } else {
-      alert('❌ Signup failed: ' + error.message);
+        alert('Please fill in all fields');
     }
-  }
 }
 
 
@@ -1034,21 +955,31 @@ function requestWithdraw() {
     document.getElementById('withdrawAmount').value = '';
 }
 
-async function logout() {
-  const { signOut } = window.firebaseAuthFns;
-  await signOut(auth);
-  userData = {
-    name: '',
-    email: '',
-    balance: 0,
-    totalOrders: 0,
-    totalEarnings: 0,
-    completedTasks: 0,
-    earnedToday: 0
-  };
-  tasks = [];
-  showScreen('authScreen');
-  showLogin();
+function logout() {
+    // Local storage clear karo (agar use ho rahi ho)
+    localStorage.removeItem('user');
+
+    // User data reset karo
+    userData = {
+        name: '',
+        email: '',
+        balance: 0,
+        totalOrders: 0,
+        totalEarnings: 0,
+        completedTasks: 0,
+        earnedToday: 0
+    };
+
+    // Tasks clear karo
+    tasks = [];
+
+    // Show only login screen
+    showScreen('authScreen');
+    showLogin(); // Show login form by default
+
+    // Input fields clear karo
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
 }
 
 
