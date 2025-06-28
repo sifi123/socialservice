@@ -685,7 +685,7 @@ let currentOrder = {
     link: ''
 };
 
-let tasks = [];
+let tasks = JSON.parse(localStorage.getItem('allTasks')) || [];
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -712,12 +712,11 @@ function login() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    const savedUser = JSON.parse(localStorage.getItem('user'));
+    const userKey = `user_${email}`;
+    const savedUser = JSON.parse(localStorage.getItem(userKey));
 
-    if (savedUser && email === savedUser.email && password === savedUser.password) {
-        userData.name = savedUser.name;
-        userData.email = savedUser.email;
-        userData.balance = 0;
+    if (savedUser && password === savedUser.password) {
+        userData = savedUser;
         updateUserData();
         showScreen('dashboardScreen');
         generateTasks();
@@ -727,25 +726,31 @@ function login() {
 }
 
 
+
 function signup() {
     const name = document.getElementById('signupName').value;
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
 
     if (name && email && password) {
+        const userKey = `user_${email}`;
         const user = {
             name,
             email,
-            password
+            password,
+            balance: 0,
+            totalOrders: 0,
+            totalEarnings: 0,
+            completedTasks: 0,
+            earnedToday: 0
         };
-        localStorage.setItem('user', JSON.stringify(user)); // 🔒 Save user in localStorage
+        localStorage.setItem(userKey, JSON.stringify(user));
         alert('Account created successfully! Now login to continue.');
         showLogin();
     } else {
         alert('Please fill in all fields');
     }
 }
-
 
 function updateUserData() {
     document.getElementById('userName').textContent = userData.name;
@@ -822,7 +827,7 @@ function submitPayment() {
     notification.innerHTML = '✅ Payment submitted successfully! Your order will be processed within 24 hours.';
     document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
     userData.totalOrders++;
-    updateUserData();
+    updateUserData();//
     document.getElementById('transactionId').value = '';
     document.getElementById('screenshot').value = '';
     document.getElementById('fileUploadText').textContent = '📷 Click to upload screenshot';
@@ -832,18 +837,21 @@ function submitPayment() {
 function addTaskFromOrder() {
     for (let i = 0; i < currentOrder.quantity; i++) {
         const newTask = {
-            id: tasks.length + 1,
+            id: Date.now() + i, // Unique ID using timestamp
             platform: currentOrder.platform,
             service: currentOrder.service,
             reward: 1,
-            completed: false,
+            completedBy: [], // Track who has completed it
             link: currentOrder.link
         };
         tasks.push(newTask);
     }
+
+    localStorage.setItem('allTasks', JSON.stringify(tasks));
     updateUserData();
     renderTasks();
 }
+
 
 function generateTasks() {
     renderTasks();
@@ -852,8 +860,12 @@ function generateTasks() {
 function renderTasks() {
     const tasksList = document.getElementById('tasksList');
     tasksList.innerHTML = '';
+
+    const userEmail = userData.email;
+
     tasks.forEach(task => {
-        if (task.completed) return;
+        if (task.completedBy.includes(userEmail)) return;
+
         const div = document.createElement('div');
         div.className = 'task-card';
         div.innerHTML = `
@@ -870,23 +882,31 @@ function renderTasks() {
         tasksList.appendChild(div);
     });
 }
+ 
 
 function submitTask(input, taskId) {
     if (!input.files.length) {
         alert('Please upload screenshot');
         return;
     }
+
+    const userEmail = userData.email;
     const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        task.completed = true;
+
+    if (task && !task.completedBy.includes(userEmail)) {
+        task.completedBy.push(userEmail);
         userData.completedTasks++;
         userData.earnedToday += task.reward;
         userData.balance += task.reward;
+
+        // After userData update:
+localStorage.setItem(`user_${userData.email}`, JSON.stringify(userData));
         updateUserData();
-        renderTasks();
+        renderTasks();//  
         alert('✅ Task submitted successfully! Rs 1 added to your balance.');
     }
 }
+
 
 function requestWithdraw() {
     const name = document.getElementById('withdrawName').value;
@@ -900,7 +920,9 @@ function requestWithdraw() {
         alert('Insufficient balance');
         return;
     }
-    userData.balance -= amount;
+    userData.balance -= amount;// 
+    localStorage.setItem(`user_${userData.email}`, JSON.stringify(userData));
+
     updateUserData();
     const notification = document.createElement('div');
     notification.className = 'notification';
@@ -912,28 +934,10 @@ function requestWithdraw() {
 }
 
 function logout() {
-    // Local storage clear karo (agar use ho rahi ho)
     localStorage.removeItem('user');
-
-    // User data reset karo
-    userData = {
-        name: '',
-        email: '',
-        balance: 0,
-        totalOrders: 0,
-        totalEarnings: 0,
-        completedTasks: 0,
-        earnedToday: 0
-    };
-
-    // Tasks clear karo
-    tasks = [];
-
-    // Show only login screen
+    userData = { name: '', email: '', balance: 0, totalOrders: 0, totalEarnings: 0, completedTasks: 0, earnedToday: 0 };
     showScreen('authScreen');
-    showLogin(); // Show login form by default
-
-    // Input fields clear karo
+    showLogin();
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
 }
