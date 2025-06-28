@@ -345,47 +345,46 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>           <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    </style>          <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
-      authDomain: "social-service-app-fa1c1.firebaseapp.com",
-      projectId: "social-service-app-fa1c1",
-      storageBucket: "social-service-app-fa1c1.appspot.com",
-      messagingSenderId: "51249725413",
-      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+    authDomain: "social-service-app-fa1c1.firebaseapp.com",
+    projectId: "social-service-app-fa1c1",
+    storageBucket: "social-service-app-fa1c1.appspot.com",
+    messagingSenderId: "51249725413",
+    appId: "1:51249725413:web:99b181ba01407bdc19f90c"
+  };
 
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window.db = db;
-    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  // ✅ Initialize Firebase
   const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
 
-window.db = db;
-window.auth = auth;
-window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
+  // ✅ Store globally
+  window.db = db;
+  window.auth = auth;
+  window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
 
-window.onload = function () {
-  const { onAuthStateChanged } = window.firebaseAuthFns;
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      userData.email = user.email;
-      userData.name = user.email.split('@')[0];
-      showScreen('dashboardScreen');
-      updateUserData();
-      generateTasks();
-    } else {
-      showScreen('authScreen');
-    }
-  });
-};
+  // ✅ Auto login session check
+  window.onload = function () {
+    const { onAuthStateChanged } = window.firebaseAuthFns;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userData.email = user.email;
+        userData.name = user.email.split('@')[0];
+        showScreen('dashboardScreen');
+        updateUserData();
+        generateTasks();
+      } else {
+        showScreen('authScreen');
+      }
+    });
+  }
 
 </script>
 </head>
