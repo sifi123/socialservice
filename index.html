@@ -346,37 +346,94 @@
             opacity: 0.9;
         }
     </style>           <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
-      authDomain: "social-service-app-fa1c1.firebaseapp.com",
-      projectId: "social-service-app-fa1c1",
-      storageBucket: "social-service-app-fa1c1.appspot.com",
-      messagingSenderId: "51249725413",
-      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window.db = db;
-    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  <!--  EXISTING Firestore imports rahne deɴ, bas Auth wale do line add kareɴ -->
-<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-  /* 👇 NEW – Auth import */
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-  const firebaseConfig = { /* …aapka config… */ };
-  const app   = initializeApp(firebaseConfig);
-  const db    = getFirestore(app);
-  const auth  = getAuth(app);          // ✅ Auth initialise
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+    authDomain: "social-service-app-fa1c1.firebaseapp.com",
+    projectId: "social-service-app-fa1c1",
+    storageBucket: "social-service-app-fa1c1.appspot.com",
+    messagingSenderId: "51249725413",
+    appId: "1:51249725413:web:99b181ba01407bdc19f90c"
+  };
 
-  window.db       = db;
-  window.auth     = auth;              // global access
-  window.fStore   = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  window.db = db;
+  window.auth = auth;
+  window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
+
+  // 🔐 Login function
+  window.login = async function () {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    try {
+      const { signInWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      userData.email = user.email;
+      userData.name = user.email.split('@')[0];
+      updateUserData();
+      showScreen('dashboardScreen');
+      generateTasks();
+    } catch (error) {
+      alert('❌ Login failed: ' + error.message);
+    }
+  }
+
+  // 📝 Signup function
+  window.signup = async function () {
+    const name = document.getElementById('signupName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    try {
+      const { createUserWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      alert('✅ Account created. Please login.');
+      showLogin();
+    } catch (error) {
+      alert('❌ Signup failed: ' + error.message);
+    }
+  }
+
+  // 🚪 Logout
+  window.logout = async function () {
+    const { signOut } = window.firebaseAuthFns;
+    await signOut(auth);
+    userData = {
+      name: '',
+      email: '',
+      balance: 0,
+      totalOrders: 0,
+      totalEarnings: 0,
+      completedTasks: 0,
+      earnedToday: 0
+    };
+    tasks = [];
+    showScreen('authScreen');
+    showLogin();
+  }
+
+  // ✅ Auto-login detection
+  window.onload = function () {
+    const { onAuthStateChanged } = window.firebaseAuthFns;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userData.email = user.email;
+        userData.name = user.email.split('@')[0];
+        showScreen('dashboardScreen');
+        updateUserData();
+        generateTasks();
+      } else {
+        showScreen('authScreen');
+      }
+    });
+  }
 </script>
 </head>
 <body>
@@ -735,61 +792,6 @@ function showLogin() {
     document.getElementById('signupForm').style.display = 'none';
 }
 
-function showSignup() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('signupForm').style.display = 'block';
-}
-
-async function login() {
-  const email    = loginEmail.value.trim();
-  const password = loginPassword.value;
-
-  try {
-    await signInWithEmailAndPassword(window.auth, email, password);
-
-    // Agar chaaheɴ to localStorage meɴ lightweight snapshot store kareɴ
-    // localStorage.setItem("uid", auth.currentUser.uid);
-
-    // Dashboard dikhayeɴ
-    await generateTasks();      // Firestore se tasks laa kar
-    showScreen("dashboardScreen");
-  } catch (err) {
-    alert("❌ Login failed: " + err.message);
-    console.error(err);
-  }
-}
-
-
-async function signup() {
-  const name     = signupName.value.trim();
-  const email    = signupEmail.value.trim();
-  const password = signupPassword.value;
-
-  if (!name || !email || !password) {
-    alert("Har field bharna zaroori hai.");
-    return;
-  }
-
-  try {
-    // ✔️  Server‑side uniqueness check – ek email ek hi dafa signup hogi
-    await createUserWithEmailAndPassword(window.auth, email, password);
-
-    // Optionally extra user info Firestore meɴ store kareɴ
-    // await addDoc(collection(window.db, "users"), { uid: auth.currentUser.uid, name });
-
-    alert("Account ban gaya! Ab login kareɴ.");
-    showLogin();
-  } catch (err) {
-    if (err.code === "auth/email-already-in-use") {
-      alert("❌ Yeh email pehle se registered hai. Login kareɴ.");
-      showLogin();
-    } else {
-      alert("❌ Signup failed: " + err.message);
-      console.error(err);
-    }
-  }
-}
-
 
 function updateUserData() {
     document.getElementById('userName').textContent = userData.name;
@@ -889,9 +891,8 @@ async function addTaskFromOrder() {
         await addDoc(collection(window.db, "tasks"), newTask);
     }
 
-    generateTasks(); // Refresh list
+    generateTasks(); // Load updated tasks from Firebase
 }
-
 
 async function generateTasks() {
     const { getDocs, collection, query, orderBy } = window.firestoreFns;
@@ -908,6 +909,7 @@ async function generateTasks() {
 
     renderTasks();
 }
+
 
 
 function renderTasks() {
