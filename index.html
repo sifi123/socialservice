@@ -362,7 +362,22 @@
     const db = getFirestore(app);
     window.db = db;
     window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  </script>
+  <!--  EXISTING Firestore imports rahne deɴ, bas Auth wale do line add kareɴ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  /* 👇 NEW – Auth import */
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+  const firebaseConfig = { /* …aapka config… */ };
+  const app   = initializeApp(firebaseConfig);
+  const db    = getFirestore(app);
+  const auth  = getAuth(app);          // ✅ Auth initialise
+
+  window.db       = db;
+  window.auth     = auth;              // global access
+  window.fStore   = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+</script>
 </head>
 <body>
     <div class="container">
@@ -725,53 +740,55 @@ function showSignup() {
     document.getElementById('signupForm').style.display = 'block';
 }
 
-function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+async function login() {
+  const email    = loginEmail.value.trim();
+  const password = loginPassword.value;
 
-    const savedUser = JSON.parse(localStorage.getItem('user'));
+  try {
+    await signInWithEmailAndPassword(window.auth, email, password);
 
-    if (savedUser && email === savedUser.email && password === savedUser.password) {
-        userData.name = savedUser.name;
-        userData.email = savedUser.email;
-        userData.balance = 0;
-        updateUserData();
-        showScreen('dashboardScreen');
-        generateTasks();
-    } else {
-        alert('Invalid login. Please check your email and password.');
-    }
+    // Agar chaaheɴ to localStorage meɴ lightweight snapshot store kareɴ
+    // localStorage.setItem("uid", auth.currentUser.uid);
+
+    // Dashboard dikhayeɴ
+    await generateTasks();      // Firestore se tasks laa kar
+    showScreen("dashboardScreen");
+  } catch (err) {
+    alert("❌ Login failed: " + err.message);
+    console.error(err);
+  }
 }
 
 
-function signup() {
-    const name = document.getElementById('signupName').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
+async function signup() {
+  const name     = signupName.value.trim();
+  const email    = signupEmail.value.trim();
+  const password = signupPassword.value;
 
-    if (name && email && password) {
-        const existingUser = JSON.parse(localStorage.getItem('user'));
+  if (!name || !email || !password) {
+    alert("Har field bharna zaroori hai.");
+    return;
+  }
 
-        if (existingUser && existingUser.email === email) {
-            alert('❌ This email is already registered. Please login instead.');
-            showLogin(); // optional: move user to login
-            return;
-        }
+  try {
+    // ✔️  Server‑side uniqueness check – ek email ek hi dafa signup hogi
+    await createUserWithEmailAndPassword(window.auth, email, password);
 
-        const user = {
-            name,
-            email,
-            password
-        };
+    // Optionally extra user info Firestore meɴ store kareɴ
+    // await addDoc(collection(window.db, "users"), { uid: auth.currentUser.uid, name });
 
-        localStorage.setItem('user', JSON.stringify(user));
-        alert('✅ Account created successfully! Now login to continue.');
-        showLogin();
+    alert("Account ban gaya! Ab login kareɴ.");
+    showLogin();
+  } catch (err) {
+    if (err.code === "auth/email-already-in-use") {
+      alert("❌ Yeh email pehle se registered hai. Login kareɴ.");
+      showLogin();
     } else {
-        alert('Please fill in all fields');
+      alert("❌ Signup failed: " + err.message);
+      console.error(err);
     }
+  }
 }
-
 
 
 function updateUserData() {
