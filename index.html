@@ -345,39 +345,7 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>           <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
-      authDomain: "social-service-app-fa1c1.firebaseapp.com",
-      projectId: "social-service-app-fa1c1",
-      storageBucket: "social-service-app-fa1c1.appspot.com",
-      messagingSenderId: "51249725413",
-      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window.db = db;
-    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  <!--  EXISTING Firestore imports rahne deɴ, bas Auth wale do line add kareɴ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-  /* 👇 NEW – Auth import */
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-
-  const firebaseConfig = { /* …aapka config… */ };
-  const app   = initializeApp(firebaseConfig);
-  const db    = getFirestore(app);
-  const auth  = getAuth(app);          // ✅ Auth initialise
-
-  window.db       = db;
-  window.auth     = auth;              // global access
-  window.fStore   = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-</script>
+    </style>          <script type="module"
 </head>
 <body>
     <div class="container">
@@ -741,54 +709,47 @@ function showSignup() {
 }
 
 async function login() {
-  const email    = loginEmail.value.trim();
-  const password = loginPassword.value;
+  const email = loginEmail.value.trim();
+  const pass = loginPassword.value;
+
+  const { auth, signInWithEmailAndPassword } = window.firebaseAuthFns;
 
   try {
-    await signInWithEmailAndPassword(window.auth, email, password);
-
-    // Agar chaaheɴ to localStorage meɴ lightweight snapshot store kareɴ
-    // localStorage.setItem("uid", auth.currentUser.uid);
-
-    // Dashboard dikhayeɴ
-    await generateTasks();      // Firestore se tasks laa kar
+    await signInWithEmailAndPassword(auth, email, pass);
+    await generateTasks();  // agar task system laga hua hai
     showScreen("dashboardScreen");
-  } catch (err) {
-    alert("❌ Login failed: " + err.message);
-    console.error(err);
+  } catch (e) {
+    alert("Login error: " + e.message);
   }
 }
 
 
-async function signup() {
-  const name     = signupName.value.trim();
-  const email    = signupEmail.value.trim();
-  const password = signupPassword.value;
 
-  if (!name || !email || !password) {
-    alert("Har field bharna zaroori hai.");
+async function signup() {
+  const name = signupName.value.trim();
+  const email = signupEmail.value.trim();
+  const pass = signupPassword.value;
+
+  const { auth, createUserWithEmailAndPassword } = window.firebaseAuthFns;
+
+  if (!name || !email || !pass) {
+    alert("Har field bharein");
     return;
   }
 
   try {
-    // ✔️  Server‑side uniqueness check – ek email ek hi dafa signup hogi
-    await createUserWithEmailAndPassword(window.auth, email, password);
-
-    // Optionally extra user info Firestore meɴ store kareɴ
-    // await addDoc(collection(window.db, "users"), { uid: auth.currentUser.uid, name });
-
-    alert("Account ban gaya! Ab login kareɴ.");
+    await createUserWithEmailAndPassword(auth, email, pass);
+    alert("✅ Account ban gaya! Ab login karein.");
     showLogin();
-  } catch (err) {
-    if (err.code === "auth/email-already-in-use") {
-      alert("❌ Yeh email pehle se registered hai. Login kareɴ.");
-      showLogin();
+  } catch (e) {
+    if (e.code === "auth/email-already-in-use") {
+      alert("❌ Email already registered. Login karein.");
     } else {
-      alert("❌ Signup failed: " + err.message);
-      console.error(err);
+      alert("Signup error: " + e.message);
     }
   }
 }
+
 
 
 function updateUserData() {
