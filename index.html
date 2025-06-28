@@ -345,7 +345,69 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>          <script type="module"
+    </style>           <!-- ========= ONE & ONLY <script type="module"> ========= -->
+<script type="module">
+  /* Firebase imports */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAuth,
+           createUserWithEmailAndPassword,
+           signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+  /* Config */
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+    authDomain: "social-service-app-fa1c1.firebaseapp.com",
+    projectId:  "social-service-app-fa1c1",
+    storageBucket: "social-service-app-fa1c1.appspot.com",
+    messagingSenderId: "51249725413",
+    appId: "1:51249725413:web:99b181ba01407bdc19f90c"
+  };
+
+  /* Init once */
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);        // (اگر Firestore چاہیے)
+
+  /* ---------- SIGN UP ---------- */
+  async function signup() {
+    const name  = signupName.value.trim();
+    const email = signupEmail.value.trim();
+    const pass  = signupPassword.value;
+
+    if (!name || !email || !pass) { alert("تمام فیلڈ بھریں"); return; }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, pass);
+      alert("✅ اکاؤنٹ بن گیا! اب لاگ اِن کریں۔");
+      showLogin();                       // آپ کا پہلے سے موجود فنکشن
+    } catch (e) {
+      if (e.code === "auth/email-already-in-use")
+        alert("❌ یہ ای‑میل پہلے سے رجسٹرڈ ہے، صرف لاگ اِن کریں۔");
+      else  alert("Signup error: " + e.message);
+    }
+  }
+
+  /* ---------- LOG IN ---------- */
+  async function login() {
+    const email = loginEmail.value.trim();
+    const pass  = loginPassword.value;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      await generateTasks();             // اگر آپ نے tasks والا فنکشن رکھا ہے
+      showScreen("dashboardScreen");
+    } catch (e) {
+      alert("Login error: " + e.message);
+    }
+  }
+
+  /* HTML بٹن access کیلئے */
+  window.signup = signup;
+  window.login  = login;
+</script>
+<!-- ========= END ========= -->
+
 </head>
 <body>
     <div class="container">
@@ -709,47 +771,54 @@ function showSignup() {
 }
 
 async function login() {
-  const email = loginEmail.value.trim();
-  const pass = loginPassword.value;
-
-  const { auth, signInWithEmailAndPassword } = window.firebaseAuthFns;
+  const email    = loginEmail.value.trim();
+  const password = loginPassword.value;
 
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
-    await generateTasks();  // agar task system laga hua hai
+    await signInWithEmailAndPassword(window.auth, email, password);
+
+    // Agar chaaheɴ to localStorage meɴ lightweight snapshot store kareɴ
+    // localStorage.setItem("uid", auth.currentUser.uid);
+
+    // Dashboard dikhayeɴ
+    await generateTasks();      // Firestore se tasks laa kar
     showScreen("dashboardScreen");
-  } catch (e) {
-    alert("Login error: " + e.message);
+  } catch (err) {
+    alert("❌ Login failed: " + err.message);
+    console.error(err);
   }
 }
 
 
-
 async function signup() {
-  const name = signupName.value.trim();
-  const email = signupEmail.value.trim();
-  const pass = signupPassword.value;
+  const name     = signupName.value.trim();
+  const email    = signupEmail.value.trim();
+  const password = signupPassword.value;
 
-  const { auth, createUserWithEmailAndPassword } = window.firebaseAuthFns;
-
-  if (!name || !email || !pass) {
-    alert("Har field bharein");
+  if (!name || !email || !password) {
+    alert("Har field bharna zaroori hai.");
     return;
   }
 
   try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-    alert("✅ Account ban gaya! Ab login karein.");
+    // ✔️  Server‑side uniqueness check – ek email ek hi dafa signup hogi
+    await createUserWithEmailAndPassword(window.auth, email, password);
+
+    // Optionally extra user info Firestore meɴ store kareɴ
+    // await addDoc(collection(window.db, "users"), { uid: auth.currentUser.uid, name });
+
+    alert("Account ban gaya! Ab login kareɴ.");
     showLogin();
-  } catch (e) {
-    if (e.code === "auth/email-already-in-use") {
-      alert("❌ Email already registered. Login karein.");
+  } catch (err) {
+    if (err.code === "auth/email-already-in-use") {
+      alert("❌ Yeh email pehle se registered hai. Login kareɴ.");
+      showLogin();
     } else {
-      alert("Signup error: " + e.message);
+      alert("❌ Signup failed: " + err.message);
+      console.error(err);
     }
   }
 }
-
 
 
 function updateUserData() {
