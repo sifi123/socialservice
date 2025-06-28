@@ -356,20 +356,7 @@
       storageBucket: "social-service-app-fa1c1.appspot.com",
       messagingSenderId: "51249725413",
       appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    };
-window.onload = function () {
-  const { onAuthStateChanged } = window.firebaseAuthFns;
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      userData.email = user.email;
-      userData.name = user.email.split('@')[0];
-      showScreen('dashboardScreen');
-      updateUserData();
-      generateTasks();
-    } else {
-      showScreen('authScreen');
     }
-  });
 }
 
     const app = initializeApp(firebaseConfig);
