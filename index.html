@@ -345,7 +345,24 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>
+    </style>           <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+      authDomain: "social-service-app-fa1c1.firebaseapp.com",
+      projectId: "social-service-app-fa1c1",
+      storageBucket: "social-service-app-fa1c1.appspot.com",
+      messagingSenderId: "51249725413",
+      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  </script>
 </head>
 <body>
     <div class="container">
@@ -829,42 +846,48 @@ function submitPayment() {
     addTaskFromOrder();
 }
 
-function addTaskFromOrder() {
-    let sharedTasks = JSON.parse(localStorage.getItem('allTasks')) || [];
+async function addTaskFromOrder() {
+    const { addDoc, collection } = window.firestoreFns;
 
     for (let i = 0; i < currentOrder.quantity; i++) {
         const newTask = {
-            id: Date.now() + i, // Unique ID
             platform: currentOrder.platform,
             service: currentOrder.service,
             reward: 1,
-            completedBy: [], // Track per user
-            link: currentOrder.link
+            completedBy: [],
+            link: currentOrder.link,
+            timestamp: Date.now()
         };
-        sharedTasks.push(newTask);
+
+        await addDoc(collection(window.db, "tasks"), newTask);
     }
 
-    localStorage.setItem('allTasks', JSON.stringify(sharedTasks));
-    tasks = sharedTasks;
-    updateUserData();
-    renderTasks();
+    generateTasks(); // Refresh list
 }
 
 
-function generateTasks() {
-    tasks = JSON.parse(localStorage.getItem('allTasks')) || [];
+async function generateTasks() {
+    const { getDocs, collection, query, orderBy } = window.firestoreFns;
+    tasks = [];
+
+    const q = query(collection(window.db, "tasks"), orderBy("timestamp", "desc"));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(doc => {
+        const task = doc.data();
+        task.id = doc.id;
+        tasks.push(task);
+    });
+
     renderTasks();
 }
+
 
 function renderTasks() {
     const tasksList = document.getElementById('tasksList');
     tasksList.innerHTML = '';
-
-    const userEmail = userData.email;
-
     tasks.forEach(task => {
-        if (task.completedBy.includes(userEmail)) return;
-
+        if (task.completed) return;
         const div = document.createElement('div');
         div.className = 'task-card';
         div.innerHTML = `
@@ -880,36 +903,24 @@ function renderTasks() {
         `;
         tasksList.appendChild(div);
     });
-
-    document.getElementById('availableTasks').textContent = tasks.filter(task => !task.completedBy.includes(userEmail)).length;
 }
-
 
 function submitTask(input, taskId) {
     if (!input.files.length) {
         alert('Please upload screenshot');
         return;
     }
-
-    const userEmail = userData.email;
-    let sharedTasks = JSON.parse(localStorage.getItem('allTasks')) || [];
-    const task = sharedTasks.find(t => t.id === taskId);
-
-    if (task && !task.completedBy.includes(userEmail)) {
-        task.completedBy.push(userEmail);
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.completed = true;
         userData.completedTasks++;
         userData.earnedToday += task.reward;
         userData.balance += task.reward;
-
-        localStorage.setItem('allTasks', JSON.stringify(sharedTasks));
-        tasks = sharedTasks;
         updateUserData();
         renderTasks();
-
         alert('✅ Task submitted successfully! Rs 1 added to your balance.');
     }
 }
-
 
 function requestWithdraw() {
     const name = document.getElementById('withdrawName').value;
@@ -935,7 +946,10 @@ function requestWithdraw() {
 }
 
 function logout() {
+    // Local storage clear karo (agar use ho rahi ho)
     localStorage.removeItem('user');
+
+    // User data reset karo
     userData = {
         name: '',
         email: '',
@@ -946,11 +960,18 @@ function logout() {
         earnedToday: 0
     };
 
+    // Tasks clear karo
+    tasks = [];
+
+    // Show only login screen
     showScreen('authScreen');
-    showLogin();
+    showLogin(); // Show login form by default
+
+    // Input fields clear karo
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
 }
+
 
 </script>
 </body>
