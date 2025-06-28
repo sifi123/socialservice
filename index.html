@@ -715,54 +715,95 @@ function showScreen(screenId) {
     }
 }
 
-function showLogin() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('signupForm').style.display = 'none';
-}
+        type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-function showSignup() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('signupForm').style.display = 'block';
-}
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
+    authDomain: "social-service-app-fa1c1.firebaseapp.com",
+    projectId: "social-service-app-fa1c1",
+    storageBucket: "social-service-app-fa1c1.appspot.com",
+    messagingSenderId: "51249725413",
+    appId: "1:51249725413:web:99b181ba01407bdc19f90c"
+  };
 
-function login() {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  window.db = db;
+  window.auth = auth;
+  window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
+
+  // 🔐 Login function
+  window.login = async function () {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-
-    const savedUser = JSON.parse(localStorage.getItem('user'));
-
-    if (savedUser && email === savedUser.email && password === savedUser.password) {
-        userData.name = savedUser.name;
-        userData.email = savedUser.email;
-        userData.balance = 0;
-        updateUserData();
-        showScreen('dashboardScreen');
-        generateTasks();
-    } else {
-        alert('Invalid login. Please check your email and password.');
+    try {
+      const { signInWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      userData.email = user.email;
+      userData.name = user.email.split('@')[0];
+      updateUserData();
+      showScreen('dashboardScreen');
+      generateTasks();
+    } catch (error) {
+      alert('❌ Login failed: ' + error.message);
     }
-}
+  }
 
-
-function signup() {
+  // 📝 Signup function
+  window.signup = async function () {
     const name = document.getElementById('signupName').value;
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
-
-    if (name && email && password) {
-        const user = {
-            name,
-            email,
-            password
-        };
-        localStorage.setItem('user', JSON.stringify(user)); // 🔒 Save user in localStorage
-        alert('Account created successfully! Now login to continue.');
-        showLogin();
-    } else {
-        alert('Please fill in all fields');
+    try {
+      const { createUserWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      alert('✅ Account created. Please login.');
+      showLogin();
+    } catch (error) {
+      alert('❌ Signup failed: ' + error.message);
     }
-}
+  }
 
+  // 🚪 Logout
+  window.logout = async function () {
+    const { signOut } = window.firebaseAuthFns;
+    await signOut(auth);
+    userData = {
+      name: '',
+      email: '',
+      balance: 0,
+      totalOrders: 0,
+      totalEarnings: 0,
+      completedTasks: 0,
+      earnedToday: 0
+    };
+    tasks = [];
+    showScreen('authScreen');
+    showLogin();
+  }
+
+  // ✅ Auto-login detection
+  window.onload = function () {
+    const { onAuthStateChanged } = window.firebaseAuthFns;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userData.email = user.email;
+        userData.name = user.email.split('@')[0];
+        showScreen('dashboardScreen');
+        updateUserData();
+        generateTasks();
+      } else {
+        showScreen('authScreen');
+      }
+    });
+  }
 
 function updateUserData() {
     document.getElementById('userName').textContent = userData.name;
