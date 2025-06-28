@@ -359,18 +359,74 @@
     appId: "1:51249725413:web:99b181ba01407bdc19f90c"
   };
 
-  // ✅ Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  // ✅ Store globally
   window.db = db;
   window.auth = auth;
   window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
   window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
 
-  // ✅ Auto login session check
+  window.signup = async function () {
+    const name = document.getElementById('signupName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+
+    if (!name || !email || !password) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const { createUserWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      alert('✅ Account created. Please login.');
+      showLogin();
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        alert('⚠️ Email already in use. Please login.');
+      } else {
+        alert('❌ Signup failed: ' + error.message);
+      }
+    }
+  };
+
+  window.login = async function () {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      const { signInWithEmailAndPassword } = window.firebaseAuthFns;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      userData.email = user.email;
+      userData.name = user.email.split('@')[0];
+      updateUserData();
+      showScreen('dashboardScreen');
+      generateTasks();
+    } catch (error) {
+      alert('❌ Login failed: ' + error.message);
+    }
+  };
+
+  window.logout = async function () {
+    const { signOut } = window.firebaseAuthFns;
+    await signOut(auth);
+    userData = {
+      name: '',
+      email: '',
+      balance: 0,
+      totalOrders: 0,
+      totalEarnings: 0,
+      completedTasks: 0,
+      earnedToday: 0
+    };
+    tasks = [];
+    showScreen('authScreen');
+    showLogin();
+  };
+
   window.onload = function () {
     const { onAuthStateChanged } = window.firebaseAuthFns;
     onAuthStateChanged(auth, (user) => {
@@ -384,9 +440,9 @@
         showScreen('authScreen');
       }
     });
-  }
-
+  };
 </script>
+
 </head>
 <body>
     <div class="container">
