@@ -356,14 +356,38 @@
       storageBucket: "social-service-app-fa1c1.appspot.com",
       messagingSenderId: "51249725413",
       appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    }
-}
+    };
+
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     window.db = db;
     window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  </script>
+  const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+window.db = db;
+window.auth = auth;
+window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+window.firebaseAuthFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged };
+
+window.onload = function () {
+  const { onAuthStateChanged } = window.firebaseAuthFns;
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      userData.email = user.email;
+      userData.name = user.email.split('@')[0];
+      showScreen('dashboardScreen');
+      updateUserData();
+      generateTasks();
+    } else {
+      showScreen('authScreen');
+    }
+  });
+};
+
+</script>
 </head>
 <body>
     <div class="container">
