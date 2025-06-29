@@ -344,27 +344,23 @@
         .stat-card p {
             font-size: 14px;
             opacity: 0.9;
-        }<!-- Firebase SDKs (Paste in <head>) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+        }
+    </style>  
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js"></script>
 
-    </style>    <script>
-  // ✅ Your Firebase configuration
+<script>
   const firebaseConfig = {
-    apiKey: "AIzaSyCbciBhQ_5avrf--QochdA5XMuwsUkMh1o",
-    authDomain: "newgh-feacc.firebaseapp.com",
-    projectId: "newgh-feacc",
-    storageBucket: "newgh-feacc.firebasestorage.app",
-    messagingSenderId: "687816075072",
-    appId: "1:687816075072:web:cb9093dce2271a2ce0fca5",
-    measurementId: "G-VJW59YECFQ"
+    apiKey: "AIzaSyDevcIhdKdspA31jYsFEVxB2_0phxVv6mg",
+    authDomain: "social-bost.firebaseapp.com",
+    projectId: "social-bost",
+    storageBucket: "social-bost.firebasestorage.app",
+    messagingSenderId: "936551074714",
+    appId: "1:936551074714:web:5d554d47ff17383d3dc823"
   };
 
-  // ✅ Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // ✅ Realtime Database reference
-  const db = firebase.database();
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 </script>
 
 </head>
@@ -834,69 +830,40 @@ function handleFileUpload(input) {
 function submitPayment() {
     const transactionId = document.getElementById('transactionId').value;
     const screenshot = document.getElementById('screenshot').files[0];
-
     if (!transactionId || !screenshot) {
         alert('Please provide transaction ID and screenshot');
         return;
     }
-
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.innerHTML = '✅ Payment submitted successfully! Your order will be processed within 24 hours.';
     document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
-
     userData.totalOrders++;
     updateUserData();
-
     document.getElementById('transactionId').value = '';
     document.getElementById('screenshot').value = '';
     document.getElementById('fileUploadText').textContent = '📷 Click to upload screenshot';
-
-    // 🎯 Buyer ke link se task banayein
-    for (let i = 0; i < currentOrder.quantity; i++) {
-        db.ref('tasks').push({
-            platform: currentOrder.platform,
-            service: currentOrder.service,
-            reward: 1,
-            completed: false,
-            link: currentOrder.link // 🧷 Link user ne paste kiya
-        });
-    }
+    addTaskFromOrder();
 }
 
-
-
-function addTaskFromOrder() {
+async function addTaskFromOrder() {
     for (let i = 0; i < currentOrder.quantity; i++) {
-        const newTask = {
-            id: tasks.length + 1,
+        const task = {
             platform: currentOrder.platform,
             service: currentOrder.service,
             reward: 1,
             completed: false,
-            link: currentOrder.link
+            link: currentOrder.link,
+            createdAt: new Date().toISOString()
         };
-        tasks.push(newTask);
+        await db.collection("tasks").add(task);
     }
-    updateUserData();
-    renderTasks();
+    fetchTasks(); // Show updated tasks
 }
+
 
 function generateTasks() {
-    db.ref('tasks').on('value', snapshot => {
-        const data = snapshot.val();
-        tasks = [];
-        for (let key in data) {
-            if (!data[key].completed) {
-                tasks.push({
-                    id: key,
-                    ...data[key]
-                });
-            }
-        }
-        updateUserData();
-        renderTasks();
-    });
+    fetchTasks();
 }
 
 
@@ -915,39 +882,36 @@ function renderTasks() {
             <p>🔗 <a href="${task.link}" target="_blank">${task.link}</a></p>
             <div class="form-group">
                 <label>Upload Screenshot</label>
-                <input type="file" accept="image/*" onchange="submitTask(this, '${task.id}')">
+                <input type="file" accept="image/*" onchange="submitTask(this, ${task.id})">
             </div>
         `;
         tasksList.appendChild(div);
     });
 }
+async function fetchTasks() {
+    const snapshot = await db.collection("tasks").where("completed", "==", false).get();
+    tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateUserData();
+    renderTasks();
+}
 
-
-
-function submitTask(input, taskId) {
+async function submitTask(input, taskId) {
     if (!input.files.length) {
         alert('Please upload screenshot');
         return;
     }
 
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        db.ref('tasks/' + taskId).update({ completed: true });
+    const taskRef = db.collection("tasks").doc(taskId);
+    await taskRef.update({ completed: true });
 
-        userData.completedTasks++;
-        userData.earnedToday += task.reward;
-        userData.balance += task.reward;
-
-        updateUserData();
-        renderTasks();
-
-        alert('✅ Task submitted successfully! Rs 1 added to your balance.');
-    }
+    userData.completedTasks++;
+    userData.earnedToday += 1;
+    userData.balance += 1;
+    updateUserData();
+    fetchTasks();
+    alert("✅ Task submitted and Rs 1 added to your balance.");
 }
 
-}
-
-}
 
 function requestWithdraw() {
     const name = document.getElementById('withdrawName').value;
