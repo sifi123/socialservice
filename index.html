@@ -254,20 +254,6 @@
             font-weight: bold;
         }
 
-        .task-status {
-            background: #ffc107;
-            color: #000;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .task-status.completed {
-            background: #28a745;
-            color: white;
-        }
-
         .navigation {
             position: fixed;
             bottom: 0;
@@ -359,25 +345,6 @@
             font-size: 14px;
             opacity: 0.9;
         }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .online-users {
-            background: #e3f2fd;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .online-users h4 {
-            color: #1976d2;
-            margin-bottom: 5px;
-        }
     </style>
 </head>
 <body>
@@ -412,9 +379,17 @@
                     <input type="email" id="signupEmail" placeholder="Enter your email">
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="signupPassword" placeholder="Create a password">
-                </div>
+    <label>Password</label>
+    <input type="password" id="signupPassword" placeholder="Create a password">
+</div>
+<div class="form-group">
+    <label>Select Role</label>
+    <select id="signupRole">
+        <option value="earning">Earn by Tasks</option>
+        <option value="service">Buy Services</option>
+    </select>
+</div>
+
                 <button class="btn" onclick="signup()">Create Account</button>
                 <button class="btn btn-secondary" onclick="showLogin()">Back to Login</button>
             </div>
@@ -425,11 +400,6 @@
             <div class="header">
                 <h1>Dashboard</h1>
                 <p>Welcome back, <span id="userName">User</span>!</p>
-            </div>
-
-            <div class="online-users">
-                <h4>👥 Online Users</h4>
-                <p id="onlineCount">Loading...</p>
             </div>
 
             <div class="balance-card">
@@ -638,11 +608,11 @@
 
             <div class="balance-card">
                 <h2>Available Tasks</h2>
-                <p id="availableTasks">Loading...</p>
+                <p id="availableTasks">0</p>
             </div>
 
             <div id="tasksList">
-                <div class="loading">Loading tasks...</div>
+                <!-- Tasks will be dynamically added here -->
             </div>
 
             <div class="stats-grid">
@@ -699,119 +669,296 @@
             <button class="nav-btn" onclick="showScreen('paymentScreen')">Payment</button>
             <button class="nav-btn" onclick="showScreen('earningsScreen')">Earnings</button>
             <button class="nav-btn" onclick="showScreen('contactScreen')">Contact</button>
-            <button class="btn btn-secondary" onclick="logout()">Logout</button>
-        </div>
+        <button class="btn btn-secondary" onclick="logout()">Logout</button>
+    </div>
     </div>
 
-   <!-- Firebase SDK -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
+    <script>
+       // 🧠 Core user data
+let userData = {
+    name: '',
+    email: '',
+    balance: 0,
+    totalOrders: 0,
+    totalEarnings: 0,
+    completedTasks: 0,
+    earnedToday: 0
+};
 
-<script>
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCbciBhQ_5avrf--QochdA5XMuwsUkMh1o",
-    authDomain: "newgh-feacc.firebaseapp.com",
-    projectId: "newgh-feacc",
-    storageBucket: "newgh-feacc.firebasestorage.app",
-    messagingSenderId: "687816075072",
-    appId: "1:687816075072:web:cb9093dce2271a2ce0fca5"
-  };
+let currentOrder = {
+    platform: '',
+    service: '',
+    quantity: 0,
+    total: 0,
+    link: ''
+};
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+let tasks = [];
 
-  // Show Signup Form
-  function showSignup() {
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if (screenId !== 'authScreen') {
+        document.getElementById('navigation').classList.add('active');
+    } else {
+        document.getElementById('navigation').classList.remove('active');
+    }
+}
+
+function showLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('signupForm').style.display = 'none';
+}
+
+function showSignup() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('signupForm').style.display = 'block';
-  }
+}
 
-  // Show Login Form
-  function showLogin() {
-    document.getElementById('signupForm').style.display = 'none';
-    document.getElementById('loginForm').style.display = 'block';
-  }
+function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
 
-  // User Signup
-  async function signup() {
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+
+   if (savedUser && email === savedUser.email && password === savedUser.password) {
+    userData.name = savedUser.name;
+    userData.email = savedUser.email;
+    userData.balance = 0;
+
+    updateUserData();
+
+    // ✅ Show screen based on role
+    if (savedUser.role === 'earning') {
+        showScreen('dashboardScreen');
+    } else if (savedUser.role === 'service') {
+        showScreen('servicesScreen');
+    }
+
+    generateTasks();
+} else {
+    alert('Invalid login. Please check your email and password.');
+}
+
+
+
+function signup() {
     const name = document.getElementById('signupName').value;
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
+    const role = document.getElementById('signupRole').value;
 
-    if (!name || !email || !password) {
-      alert("Please fill all fields.");
-      return;
+    if (name && email && password && role) {
+        const user = {
+            name,
+            email,
+            password,
+            role
+        };
+        localStorage.setItem('user', JSON.stringify(user));
+        alert('Account created successfully! Now login to continue.');
+        showLogin();
+    } else {
+        alert('Please fill in all fields');
     }
+}
 
-    try {
-      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-      const user = userCredential.user;
+}
 
-      await db.collection('users').doc(user.uid).set({
-        name: name,
-        email: email,
+
+function updateUserData() {
+    document.getElementById('userName').textContent = userData.name;
+    document.getElementById('userBalance').textContent = userData.balance;
+    document.getElementById('totalOrders').textContent = userData.totalOrders;
+    document.getElementById('totalEarnings').textContent = `Rs ${userData.totalEarnings}`;
+    document.getElementById('completedTasks').textContent = userData.completedTasks;
+    document.getElementById('earnedCoins').textContent = `Rs ${userData.earnedToday}`;
+    document.getElementById('availableTasks').textContent = tasks.filter(t => !t.completed).length;
+}
+
+function selectService(platform) {
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.classList.remove('selected');
+        card.querySelector('.service-options').classList.remove('active');
+    });
+    event.currentTarget.classList.add('selected');
+    document.getElementById(platform + 'Options').classList.add('active');
+    document.getElementById('orderForm').style.display = 'block';
+    const serviceSelect = document.getElementById('serviceType');
+    serviceSelect.innerHTML = '<option value="">Select Service</option>';
+    if (platform === 'youtube') {
+        serviceSelect.innerHTML += '<option value="subscriber">1 Subscriber - Rs 1</option>';
+        serviceSelect.innerHTML += '<option value="like">10 Likes - Rs 1</option>';
+    } else {
+        serviceSelect.innerHTML += '<option value="follower">1 Follower - Rs 1</option>';
+        serviceSelect.innerHTML += '<option value="like">10 Likes - Rs 1</option>';
+    }
+    currentOrder.platform = platform;
+}
+
+function calculateTotal() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 0;
+    const total = quantity * 1;
+    document.getElementById('totalPrice').textContent = total;
+    currentOrder.quantity = quantity;
+    currentOrder.total = total;
+}
+
+function proceedToPayment() {
+    const link = document.getElementById('accountLink').value;
+    const service = document.getElementById('serviceType').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    if (!link || !service || !quantity) {
+        alert('Please fill in all fields');
+        return;
+    }
+    currentOrder.link = link;
+    currentOrder.service = service;
+    document.getElementById('paymentAmount').textContent = currentOrder.total;
+    showScreen('paymentScreen');
+}
+
+function selectPaymentMethod(method) {
+    document.querySelectorAll('.payment-method').forEach(pm => pm.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+}
+
+function handleFileUpload(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileUploadText').textContent = '✅ Screenshot uploaded';
+    }
+}
+
+function submitPayment() {
+    const transactionId = document.getElementById('transactionId').value;
+    const screenshot = document.getElementById('screenshot').files[0];
+    if (!transactionId || !screenshot) {
+        alert('Please provide transaction ID and screenshot');
+        return;
+    }
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = '✅ Payment submitted successfully! Your order will be processed within 24 hours.';
+    document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
+    userData.totalOrders++;
+    updateUserData();
+    document.getElementById('transactionId').value = '';
+    document.getElementById('screenshot').value = '';
+    document.getElementById('fileUploadText').textContent = '📷 Click to upload screenshot';
+    addTaskFromOrder();
+}
+
+function addTaskFromOrder() {
+    for (let i = 0; i < currentOrder.quantity; i++) {
+        const newTask = {
+            id: tasks.length + 1,
+            platform: currentOrder.platform,
+            service: currentOrder.service,
+            reward: 1,
+            completed: false,
+            link: currentOrder.link
+        };
+        tasks.push(newTask);
+    }
+    updateUserData();
+    renderTasks();
+}
+
+function generateTasks() {
+    renderTasks();
+}
+
+function renderTasks() {
+    const tasksList = document.getElementById('tasksList');
+    tasksList.innerHTML = '';
+    tasks.forEach(task => {
+        if (task.completed) return;
+        const div = document.createElement('div');
+        div.className = 'task-card';
+        div.innerHTML = `
+            <div class="task-header">
+                <strong>${task.platform} - ${task.service}</strong>
+                <span class="task-reward">Rs ${task.reward}</span>
+            </div>
+            <p>🔗 <a href="${task.link}" target="_blank">${task.link}</a></p>
+            <div class="form-group">
+                <label>Upload Screenshot</label>
+                <input type="file" accept="image/*" onchange="submitTask(this, ${task.id})">
+            </div>
+        `;
+        tasksList.appendChild(div);
+    });
+}
+
+function submitTask(input, taskId) {
+    if (!input.files.length) {
+        alert('Please upload screenshot');
+        return;
+    }
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.completed = true;
+        userData.completedTasks++;
+        userData.earnedToday += task.reward;
+        userData.balance += task.reward;
+        updateUserData();
+        renderTasks();
+        alert('✅ Task submitted successfully! Rs 1 added to your balance.');
+    }
+}
+
+function requestWithdraw() {
+    const name = document.getElementById('withdrawName').value;
+    const number = document.getElementById('withdrawNumber').value;
+    const amount = parseInt(document.getElementById('withdrawAmount').value);
+    if (!name || !number || !amount || amount < 300) {
+        alert('Please fill in all fields. Minimum withdrawal is Rs 300.');
+        return;
+    }
+    if (amount > userData.balance) {
+        alert('Insufficient balance');
+        return;
+    }
+    userData.balance -= amount;
+    updateUserData();
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = '✅ Withdrawal request submitted! Amount will be transferred within 30 minutes.';
+    document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
+    document.getElementById('withdrawName').value = '';
+    document.getElementById('withdrawNumber').value = '';
+    document.getElementById('withdrawAmount').value = '';
+}
+
+function logout() {
+    // Local storage clear karo (agar use ho rahi ho)
+    localStorage.removeItem('user');
+
+    // User data reset karo
+    userData = {
+        name: '',
+        email: '',
         balance: 0,
         totalOrders: 0,
         totalEarnings: 0,
         completedTasks: 0,
-        earnedToday: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+        earnedToday: 0
+    };
 
-      alert("Account created successfully!");
-      showLogin(); // Show login after signup
-    } catch (error) {
-      alert("Signup Error: " + error.message);
-    }
-  }
+    // Tasks clear karo
+    tasks = [];
 
-  // User Login
-  async function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    // Show only login screen
+    showScreen('authScreen');
+    showLogin(); // Show login form by default
 
-    if (!email || !password) {
-      alert("Please enter email and password.");
-      return;
-    }
+    // Input fields clear karo
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+}
 
-    try {
-      await auth.signInWithEmailAndPassword(email, password);
-      alert("Login successful!");
-      showScreen('dashboardScreen'); // show dashboard if needed
-    } catch (error) {
-      alert("Login Error: " + error.message);
-    }
-  }
 
-  // Screen Navigation Function
-  function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(screen => {
-      screen.classList.remove('active');
-    });
-    document.getElementById(screenId).classList.add('active');
-
-    if (screenId === 'authScreen') {
-      document.getElementById('navigation').classList.remove('active');
-    } else {
-      document.getElementById('navigation').classList.add('active');
-    }
-  }
-
-  // Auto-login if user is already logged in
-  document.addEventListener('DOMContentLoaded', () => {
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        showScreen('dashboardScreen');
-      } else {
-        showScreen('authScreen');
-      }
-    });
-  });
 </script>
 </body>
 </html>
