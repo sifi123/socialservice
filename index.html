@@ -320,7 +320,22 @@
         .file-upload input {
             display: none;
         }
-
+.complete-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    background-color: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: none;
+}
+.complete-btn:hover {
+    background-color: #556cd6;
+}
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -344,7 +359,16 @@
         .stat-card p {
             font-size: 14px;
             opacity: 0.9;
-        }
+        }.   logout-small {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    color: #667eea;
+    border: 1px solid #667eea;
+    margin-left: 5px;
+}
+
     </style>  <script type="module">
   // Firebase Core + Auth + Database
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -693,7 +717,8 @@
             <button class="nav-btn" onclick="showScreen('paymentScreen')">Payment</button>
             <button class="nav-btn" onclick="showScreen('earningsScreen')">Earnings</button>
             <button class="nav-btn" onclick="showScreen('contactScreen')">Contact</button>
-        <button class="btn btn-secondary" onclick="logout()">Logout</button>
+       <button class="logout-small" onclick="logout()">Logout</button>
+
     </div>
     </div>
 
