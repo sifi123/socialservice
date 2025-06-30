@@ -946,6 +946,7 @@ function renderTasks() {
     tasksList.innerHTML = '';
     tasks.forEach(task => {
         if (task.completed) return;
+
         const div = document.createElement('div');
         div.className = 'task-card';
         div.innerHTML = `
@@ -956,20 +957,17 @@ function renderTasks() {
             <p>🔗 <a href="${task.link}" target="_blank">${task.link}</a></p>
             <div class="form-group">
                 <label>Upload Screenshot</label>
-                <input type="file" accept="image/*" onchange="submitTask(this, ${task.id})">
+                <input type="file" accept="image/*" onchange="enableCompleteButton(this, '${task.id}')">
             </div>
+            <button class="complete-btn" id="completeBtn-${task.id}" onclick="submitTask('${task.id}')">Mark as Complete</button>
         `;
         tasksList.appendChild(div);
     });
 }
 
-function submitTask(input, taskId) {
-    if (!input.files.length) {
-        alert('Please upload screenshot');
-        return;
-    }
+function submitTask(taskId) {
     const task = tasks.find(t => t.id === taskId);
-    if (task) {
+    if (task && !task.completed) {
         task.completed = true;
         userData.completedTasks++;
         userData.earnedToday += task.reward;
@@ -978,6 +976,8 @@ function submitTask(input, taskId) {
         renderTasks();
         alert('✅ Task submitted successfully! Rs 1 added to your balance.');
     }
+}
+
 }
 
 function requestWithdraw() {
@@ -1001,6 +1001,11 @@ function requestWithdraw() {
     document.getElementById('withdrawName').value = '';
     document.getElementById('withdrawNumber').value = '';
     document.getElementById('withdrawAmount').value = '';
+}
+function enableCompleteButton(input, taskId) {
+    if (input.files.length > 0) {
+        document.getElementById(`completeBtn-${taskId}`).style.display = 'block';
+    }
 }
 
 function logout() {
@@ -1029,7 +1034,6 @@ function logout() {
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
 }
-
 
 </script>
 </body>
