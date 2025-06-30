@@ -345,39 +345,39 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>           <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-3oxfxo-8Y8c6YCukffL92nj9cI7CfXQ",
-      authDomain: "social-service-app-fa1c1.firebaseapp.com",
-      projectId: "social-service-app-fa1c1",
-      storageBucket: "social-service-app-fa1c1.appspot.com",
-      messagingSenderId: "51249725413",
-      appId: "1:51249725413:web:99b181ba01407bdc19f90c"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window.db = db;
-    window.firestoreFns = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
-  <!--  EXISTING Firestore imports rahne deɴ, bas Auth wale do line add kareɴ -->
-<script type="module">
+    </style>  <script type="module">
+  // Firebase Core + Auth + Database
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-  /* 👇 NEW – Auth import */
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  const firebaseConfig = { /* …aapka config… */ };
-  const app   = initializeApp(firebaseConfig);
-  const db    = getFirestore(app);
-  const auth  = getAuth(app);          // ✅ Auth initialise
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBS3hL2SWzaTnIrSQGqXym0BKkr0y01qEU",
+    authDomain: "socialapp-678b6.firebaseapp.com",
+    databaseURL: "https://socialapp-678b6-default-rtdb.firebaseio.com",
+    projectId: "socialapp-678b6",
+    storageBucket: "socialapp-678b6.firebasestorage.app",
+    messagingSenderId: "102892089274",
+    appId: "1:102892089274:web:f1f4c17265a79710783783"
+  };
 
-  window.db       = db;
-  window.auth     = auth;              // global access
-  window.fStore   = { collection, addDoc, getDocs, doc, updateDoc, query, orderBy };
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  // Global Firebase exports for use in functions
+  window.firebaseAuth = auth;
+  window.firebaseDB = db;
+  window.firebaseCreateUser = createUserWithEmailAndPassword;
+  window.firebaseLoginUser = signInWithEmailAndPassword;
+  window.firebaseSet = set;
+  window.firebaseRef = ref;
+  window.firebasePush = push;
+  window.firebaseOnValue = onValue;
 </script>
+
 </head>
 <body>
     <div class="container">
@@ -740,54 +740,61 @@ function showSignup() {
     document.getElementById('signupForm').style.display = 'block';
 }
 
-async function login() {
-  const email    = loginEmail.value.trim();
-  const password = loginPassword.value;
 
-  try {
-    await signInWithEmailAndPassword(window.auth, email, password);
+function signup() {
+  const name = document.getElementById('signupName').value;
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
 
-    // Agar chaaheɴ to localStorage meɴ lightweight snapshot store kareɴ
-    // localStorage.setItem("uid", auth.currentUser.uid);
-
-    // Dashboard dikhayeɴ
-    await generateTasks();      // Firestore se tasks laa kar
-    showScreen("dashboardScreen");
-  } catch (err) {
-    alert("❌ Login failed: " + err.message);
-    console.error(err);
+  if (name && email && password) {
+    firebaseCreateUser(firebaseAuth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        // Save extra user info to database
+        const uid = user.uid;
+        firebaseSet(firebaseRef(firebaseDB, 'users/' + uid), {
+          name: name,
+          email: email,
+          balance: 0,
+          totalOrders: 0,
+          totalEarnings: 0,
+          completedTasks: 0,
+          earnedToday: 0
+        });
+        alert("Account created successfully. Please login.");
+        showLogin();
+      })
+      .catch((error) => {
+        alert("Signup error: " + error.message);
+      });
+  } else {
+    alert('Please fill in all fields');
   }
 }
 
+function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
 
-async function signup() {
-  const name     = signupName.value.trim();
-  const email    = signupEmail.value.trim();
-  const password = signupPassword.value;
+  firebaseLoginUser(firebaseAuth, email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      const uid = user.uid;
 
-  if (!name || !email || !password) {
-    alert("Har field bharna zaroori hai.");
-    return;
-  }
-
-  try {
-    // ✔️  Server‑side uniqueness check – ek email ek hi dafa signup hogi
-    await createUserWithEmailAndPassword(window.auth, email, password);
-
-    // Optionally extra user info Firestore meɴ store kareɴ
-    // await addDoc(collection(window.db, "users"), { uid: auth.currentUser.uid, name });
-
-    alert("Account ban gaya! Ab login kareɴ.");
-    showLogin();
-  } catch (err) {
-    if (err.code === "auth/email-already-in-use") {
-      alert("❌ Yeh email pehle se registered hai. Login kareɴ.");
-      showLogin();
-    } else {
-      alert("❌ Signup failed: " + err.message);
-      console.error(err);
-    }
-  }
+      // Load user data from Firebase
+      firebaseOnValue(firebaseRef(firebaseDB, 'users/' + uid), (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          userData = data;
+          updateUserData();
+          showScreen('dashboardScreen');
+          generateTasks();
+        }
+      });
+    })
+    .catch((error) => {
+      alert("Login failed: " + error.message);
+    });
 }
 
 
@@ -873,40 +880,39 @@ function submitPayment() {
     addTaskFromOrder();
 }
 
-async function addTaskFromOrder() {
-    const { addDoc, collection } = window.firestoreFns;
-
+function addTaskFromOrder() {
     for (let i = 0; i < currentOrder.quantity; i++) {
         const newTask = {
             platform: currentOrder.platform,
             service: currentOrder.service,
             reward: 1,
-            completedBy: [],
-            link: currentOrder.link,
-            timestamp: Date.now()
+            completed: false,
+            link: currentOrder.link
         };
 
-        await addDoc(collection(window.db, "tasks"), newTask);
+        // ✅ Firebase mein task save karo
+        firebasePush(firebaseRef(firebaseDB, 'tasks'), newTask);
+
+        // Optional: local task list mein bhi dalo (display ke liye)
+        tasks.push({ ...newTask, id: tasks.length + 1 });
     }
 
-    generateTasks(); // Refresh list
+    updateUserData();
+    renderTasks();
 }
 
 
-async function generateTasks() {
-    const { getDocs, collection, query, orderBy } = window.firestoreFns;
+function generateTasks() {
+  firebaseOnValue(firebaseRef(firebaseDB, 'tasks'), (snapshot) => {
     tasks = [];
-
-    const q = query(collection(window.db, "tasks"), orderBy("timestamp", "desc"));
-    const snapshot = await getDocs(q);
-
-    snapshot.forEach(doc => {
-        const task = doc.data();
-        task.id = doc.id;
-        tasks.push(task);
+    snapshot.forEach((child) => {
+      const task = child.val();
+      task.id = child.key;
+      tasks.push(task);
     });
-
     renderTasks();
+    updateUserData();
+  });
 }
 
 
