@@ -320,22 +320,7 @@
         .file-upload input {
             display: none;
         }
-.complete-btn {
-    margin-top: 10px;
-    width: 100%;
-    padding: 10px;
-    background-color: #667eea;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 10px;
-    display: none;
-}
-.complete-btn:hover {
-    background-color: #556cd6;
-}
+
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -359,54 +344,30 @@
         .stat-card p {
             font-size: 14px;
             opacity: 0.9;
-        }.   logout-small {
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    color: #667eea;
-    border: 1px solid #667eea;
-    margin-left: 5px;
-}
-
-    </style>  <script type="module">
-  // Firebase Core + Auth + Database
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-  // Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyBS3hL2SWzaTnIrSQGqXym0BKkr0y01qEU",
-    authDomain: "socialapp-678b6.firebaseapp.com",
-    databaseURL: "https://socialapp-678b6-default-rtdb.firebaseio.com",
-    projectId: "socialapp-678b6",
-    storageBucket: "socialapp-678b6.firebasestorage.app",
-    messagingSenderId: "102892089274",
-    appId: "1:102892089274:web:f1f4c17265a79710783783"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-
-  // Global Firebase exports for use in functions
-  window.firebaseAuth = auth;
-  window.firebaseDB = db;
-  window.firebaseCreateUser = createUserWithEmailAndPassword;
-  window.firebaseLoginUser = signInWithEmailAndPassword;
-  window.firebaseSet = set;
-  window.firebaseRef = ref;
-  window.firebasePush = push;
-  window.firebaseOnValue = onValue;
+        }
+    </style>  
 </script>
 
 </head>
 <body>
     <div class="container">
         <!-- Screen 1: Login/Signup -->
-        <div class="screen active" id="authScreen">
+       <!-- Screen 1: Registration with Airtable -->
+<div class="screen active" id="authScreen">
+  <div class="header">
+    <h1>🚀 Social Boost</h1>
+    <p>Register to use the service</p>
+  </div>
+
+  <div class="form-group">
+    <button class="btn" onclick="window.open('https://airtable.com/appXhk2POe7vfktXX/pagFuQMLp9s5nND2c/form','_blank')">Create New Account</button>
+  </div>
+
+  <div class="form-group">
+    <button class="btn btn-secondary" onclick="showScreen('dashboardScreen')">Continue Without Login</button>
+  </div>
+</div>
+
             <div class="header">
                 <h1>🚀 Social Boost</h1>
                 <p>Grow your social media presence</p>
@@ -624,7 +585,9 @@
                 </div>
             </div>
 
-            <button class="btn" onclick="submitPayment()">Submit Payment</button>
+            <a href="https://airtable.com/appXhk2POe7vfktXX/pagBgjJWGYLS7u7MR/form" target="_blank">
+  <button class="btn">Submit Payment Screenshot</button>
+</a>
 
             <div style="margin-top: 30px;">
                 <h3>Withdraw Funds</h3>
@@ -640,7 +603,10 @@
                     <label>Amount (Min Rs 300)</label>
                     <input type="number" id="withdrawAmount" placeholder="Enter amount" min="300">
                 </div>
-                <button class="btn btn-secondary" onclick="requestWithdraw()">Request Withdraw</button>
+                <a href="https://airtable.com/appXhk2POe7vfktXX/pagqJ6AqR0iEX5qoN/form" target="_blank">
+  <button class="btn btn-secondary">Request Withdraw</button>
+</a>
+
                 <p style="font-size: 12px; color: #666; margin-top: 10px;">
                     * Withdrawal will be processed within 30 minutes
                 </p>
@@ -717,16 +683,14 @@
             <button class="nav-btn" onclick="showScreen('paymentScreen')">Payment</button>
             <button class="nav-btn" onclick="showScreen('earningsScreen')">Earnings</button>
             <button class="nav-btn" onclick="showScreen('contactScreen')">Contact</button>
-       <button class="logout-small" onclick="logout()">Logout</button>
-
+        <button class="btn btn-secondary" onclick="logout()">Logout</button>
     </div>
     </div>
 
     <script>
-       // 🧠 Core user data
+// 🧠 Core user data (local only)
 let userData = {
-    name: '',
-    email: '',
+    name: 'Guest',
     balance: 0,
     totalOrders: 0,
     totalEarnings: 0,
@@ -756,81 +720,11 @@ function showScreen(screenId) {
 }
 
 function showLogin() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('signupForm').style.display = 'none';
+    showScreen('authScreen');
 }
 
 function showSignup() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('signupForm').style.display = 'block';
-}
-
-
-function signup() {
-  const name = document.getElementById('signupName').value;
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-
-  if (name && email && password) {
-    firebaseCreateUser(firebaseAuth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        // Save extra user info to database
-        const uid = user.uid;
-        firebaseSet(firebaseRef(firebaseDB, 'users/' + uid), {
-          name: name,
-          email: email,
-          balance: 0,
-          totalOrders: 0,
-          totalEarnings: 0,
-          completedTasks: 0,
-          earnedToday: 0
-        });
-        alert("Account created successfully. Please login.");
-        showLogin();
-      })
-      .catch((error) => {
-        alert("Signup error: " + error.message);
-      });
-  } else {
-    alert('Please fill in all fields');
-  }
-}
-
-function login() {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-
-  firebaseLoginUser(firebaseAuth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      const uid = user.uid;
-
-      // Load user data from Firebase
-      firebaseOnValue(firebaseRef(firebaseDB, 'users/' + uid), (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          userData = data;
-          updateUserData();
-          showScreen('dashboardScreen');
-          generateTasks();
-        }
-      });
-    })
-    .catch((error) => {
-      alert("Login failed: " + error.message);
-    });
-}
-
-
-function updateUserData() {
-    document.getElementById('userName').textContent = userData.name;
-    document.getElementById('userBalance').textContent = userData.balance;
-    document.getElementById('totalOrders').textContent = userData.totalOrders;
-    document.getElementById('totalEarnings').textContent = `Rs ${userData.totalEarnings}`;
-    document.getElementById('completedTasks').textContent = userData.completedTasks;
-    document.getElementById('earnedCoins').textContent = `Rs ${userData.earnedToday}`;
-    document.getElementById('availableTasks').textContent = tasks.filter(t => !t.completed).length;
+    window.open('https://airtable.com/appXhk2POe7vfktXX/pagFuQMLp9s5nND2c/form', '_blank');
 }
 
 function selectService(platform) {
@@ -886,164 +780,18 @@ function handleFileUpload(input) {
     }
 }
 
-function submitPayment() {
-    const transactionId = document.getElementById('transactionId').value;
-    const screenshot = document.getElementById('screenshot').files[0];
-    if (!transactionId || !screenshot) {
-        alert('Please provide transaction ID and screenshot');
-        return;
-    }
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.innerHTML = '✅ Payment submitted successfully! Your order will be processed within 24 hours.';
-    document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
-    userData.totalOrders++;
-    updateUserData();
-    document.getElementById('transactionId').value = '';
-    document.getElementById('screenshot').value = '';
-    document.getElementById('fileUploadText').textContent = '📷 Click to upload screenshot';
-    addTaskFromOrder();
-}
-
-function addTaskFromOrder() {
-    for (let i = 0; i < currentOrder.quantity; i++) {
-        const newTask = {
-            platform: currentOrder.platform,
-            service: currentOrder.service,
-            reward: 1,
-            completed: false,
-            link: currentOrder.link
-        };
-
-        // ✅ Firebase mein task save karo
-        firebasePush(firebaseRef(firebaseDB, 'tasks'), newTask);
-
-        // Optional: local task list mein bhi dalo (display ke liye)
-        tasks.push({ ...newTask, id: tasks.length + 1 });
-    }
-
-    updateUserData();
-    renderTasks();
-}
-
-
-function generateTasks() {
-  firebaseOnValue(firebaseRef(firebaseDB, 'tasks'), (snapshot) => {
-    tasks = [];
-    snapshot.forEach((child) => {
-      const task = child.val();
-      task.id = child.key;
-      tasks.push(task);
-    });
-    renderTasks();
-    updateUserData();
-  });
-}
-
-
-function renderTasks() { 
-    const tasksList = document.getElementById('tasksList');
-    tasksList.innerHTML = ''; }
-    function enableCompleteButton(taskId) {
-    const btn = document.getElementById(`completeBtn-${taskId}`);
-    if (btn) {
-        btn.style.display = 'block';
-    }
-}
-
-    tasks.forEach(task => {
-        if (task.completed) return;
-
-        const div = document.createElement('div');
-        div.className = 'task-card';
-        div.innerHTML = `
-            <div class="task-header">
-                <strong>${task.platform} - ${task.service}</strong>
-                <span class="task-reward">Rs ${task.reward}</span>
-            </div>
-            <p>🔗 <a href="${task.link}" target="_blank">${task.link}</a></p>
-            <div class="form-group">
-                <label>Upload Screenshot</label>
-                <input type="file" accept="image/*" onchange="enableCompleteButton('${task.id}')">
-            </div>
-            <button class="complete-btn" id="completeBtn-${task.id}" onclick="submitTask('${task.id}')">✅ Mark as Complete</button>
-        `;
-        tasksList.appendChild(div);
-    });
-}
-
-function submitTask(taskId) {
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-
-    const task = tasks[taskIndex];
-
-    // ✅ Mark complete in local data
-    task.completed = true;
-    userData.completedTasks++;
-    userData.earnedToday += task.reward;
-    userData.balance += task.reward;
-
-    // ✅ Update task in Firebase
-    firebaseSet(firebaseRef(firebaseDB, `tasks/${taskId}`), task);
-
-    updateUserData();
-    renderTasks();
-
-    alert('✅ Task completed! Rs 1 added to your account.');
-}
-
-function requestWithdraw() {
-    const name = document.getElementById('withdrawName').value;
-    const number = document.getElementById('withdrawNumber').value;
-    const amount = parseInt(document.getElementById('withdrawAmount').value);
-    if (!name || !number || !amount || amount < 300) {
-        alert('Please fill in all fields. Minimum withdrawal is Rs 300.');
-        return;
-    }
-    if (amount > userData.balance) {
-        alert('Insufficient balance');
-        return;
-    }
-    userData.balance -= amount;
-    updateUserData();
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.innerHTML = '✅ Withdrawal request submitted! Amount will be transferred within 30 minutes.';
-    document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
-    document.getElementById('withdrawName').value = '';
-    document.getElementById('withdrawNumber').value = '';
-    document.getElementById('withdrawAmount').value = '';
-}
-
 function logout() {
-    // Local storage clear karo (agar use ho rahi ho)
-    localStorage.removeItem('user');
-
-    // User data reset karo
     userData = {
-        name: '',
-        email: '',
+        name: 'Guest',
         balance: 0,
         totalOrders: 0,
         totalEarnings: 0,
         completedTasks: 0,
         earnedToday: 0
     };
-
-    // Tasks clear karo
     tasks = [];
-
-    // Show only login screen
     showScreen('authScreen');
-    showLogin(); // Show login form by default
-
-    // Input fields clear karo
-    document.getElementById('loginEmail').value = '';
-    document.getElementById('loginPassword').value = '';
 }
-
-
-</script>
+<script>
 </body>
 </html>
