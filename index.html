@@ -345,6 +345,39 @@
             font-size: 14px;
             opacity: 0.9;
         }
+  .whatsapp-btn {
+        padding: 15px 25px;
+        font-size: 16px;
+        background-color: #25D366;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transition: background-color 0.3s;
+        }
+
+.whatsapp-btn:hover {
+  background-color: #1ebe5b;
+}
+
+    .logout-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+        width: auto;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .logout-btn:hover {
+        background: #c82333;
+    }
+
     </style>  <script type="module">
   // Firebase Core + Auth + Database
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -463,10 +496,10 @@ window.firebaseRemove = remove;
                 <div class="service-options" id="tiktokOptions">
                     <div class="option-row">
                         <span>1 Follower</span>
-                        <span>Rs 1</span>
+                        <span>Rs 2</span>
                     </div>
                     <div class="option-row">
-                        <span>10 Likes</span>
+                        <span>5 Likes</span>
                         <span>Rs 1</span>
                     </div>
                 </div>
@@ -480,10 +513,10 @@ window.firebaseRemove = remove;
                 <div class="service-options" id="facebookOptions">
                     <div class="option-row">
                         <span>1 Follower</span>
-                        <span>Rs 1</span>
+                        <span>Rs 2</span>
                     </div>
                     <div class="option-row">
-                        <span>10 Likes</span>
+                        <span>5 Likes</span>
                         <span>Rs 1</span>
                     </div>
                 </div>
@@ -497,10 +530,10 @@ window.firebaseRemove = remove;
                 <div class="service-options" id="youtubeOptions">
                     <div class="option-row">
                         <span>1 Subscriber</span>
-                        <span>Rs 1</span>
+                        <span>Rs 2</span>
                     </div>
                     <div class="option-row">
-                        <span>10 Likes</span>
+                        <span>5 Likes</span>
                         <span>Rs 1</span>
                     </div>
                 </div>
@@ -514,10 +547,10 @@ window.firebaseRemove = remove;
                 <div class="service-options" id="instagramOptions">
                     <div class="option-row">
                         <span>1 Follower</span>
-                        <span>Rs 1</span>
+                        <span>Rs 2</span>
                     </div>
                     <div class="option-row">
-                        <span>10 Likes</span>
+                        <span>5 Likes</span>
                         <span>Rs 1</span>
                     </div>
                 </div>
@@ -531,10 +564,10 @@ window.firebaseRemove = remove;
                 <div class="service-options" id="twitterOptions">
                     <div class="option-row">
                         <span>1 Follower</span>
-                        <span>Rs 1</span>
+                        <span>Rs 2</span>
                     </div>
                     <div class="option-row">
-                        <span>10 Likes</span>
+                        <span>5 Likes</span>
                         <span>Rs 1</span>
                     </div>
                 </div>
@@ -662,39 +695,21 @@ window.firebaseRemove = remove;
             </div>
         </div>
 
-        <!-- Screen 6: Contact -->
-        <div class="screen" id="contactScreen">
-            <div class="header">
-                <h1>Contact Us</h1>
-                <p>Get in touch with our support team</p>
-            </div>
+       <!-- Screen 6: Contact -->
+<div class="screen" id="contactScreen">
+  <div class="header">
+    <h1>📞 Contact Us</h1>
+    <p>Reach us directly on WhatsApp</p>
+  </div>
 
-            <div class="form-group">
-                <label>Your Name</label>
-                <input type="text" id="contactName" placeholder="Enter your name">
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="contactEmail" placeholder="Enter your email">
-            </div>
-            <div class="form-group">
-                <label>Subject</label>
-                <input type="text" id="contactSubject" placeholder="Enter subject">
-            </div>
-            <div class="form-group">
-                <label>Message</label>
-                <textarea id="contactMessage" rows="5" placeholder="Enter your message"></textarea>
-            </div>
+  <div style="text-align: center; margin-top: 40px;">
+    <a href="https://wa.me/923367169498?text=Hello%20I%20need%20help%20with%20your%20website" target="_blank">
+      <button class="whatsapp-btn">💬 Message on WhatsApp</button>
+    </a>
+    <p style="margin-top: 10px; color: #555;">Available 9AM–9PM Daily</p>
+  </div>
+</div>
 
-            <button class="btn" onclick="sendMessage()">Send Message</button>
-
-            <div style="margin-top: 30px; text-align: center;">
-                <h3>Direct Contact</h3>
-                <p style="margin: 10px 0;">📧 saifullahkhan91997@gmail.com</p>
-                <p>We'll respond within 24 hours</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Navigation -->
     <div class="navigation" id="navigation">
@@ -704,7 +719,8 @@ window.firebaseRemove = remove;
             <button class="nav-btn" onclick="showScreen('paymentScreen')">Payment</button>
             <button class="nav-btn" onclick="showScreen('earningsScreen')">Earnings</button>
             <button class="nav-btn" onclick="showScreen('contactScreen')">Contact</button>
-        <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+
     </div>
     </div>
 
@@ -973,7 +989,11 @@ function renderTasks() {
     userData.balance += task.reward;
 
     updateUserData();
-    alert('✅ Task submitted successfully! Rs 1 added to your balance.');
+   alert('✅ Task submitted successfully! Rs 1 added to your balance.');
+setTimeout(() => {
+  showScreen('earningsScreen');
+}, 300);  // Delay 0.3 second to override any accidental jump
+
 
     // 🔥 Delete task from Firebase (so no one else sees it)
     firebaseRemove(firebaseRef(firebaseDB, 'tasks/' + task.id))
@@ -1005,6 +1025,7 @@ function submitTask(input, taskId) {
         updateUserData();
         renderTasks();
         alert('✅ Task submitted successfully! Rs 1 added to your balance.');
+
     }
 }
 
