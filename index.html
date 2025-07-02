@@ -345,7 +345,41 @@
             font-size: 14px;
             opacity: 0.9;
         }
-    </style>  
+    </style>  <script type="module">
+  // Firebase Core + Auth + Database
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+  import { remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+window.firebaseRemove = remove;
+
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBS3hL2SWzaTnIrSQGqXym0BKkr0y01qEU",
+    authDomain: "socialapp-678b6.firebaseapp.com",
+    databaseURL: "https://socialapp-678b6-default-rtdb.firebaseio.com",
+    projectId: "socialapp-678b6",
+    storageBucket: "socialapp-678b6.firebasestorage.app",
+    messagingSenderId: "102892089274",
+    appId: "1:102892089274:web:f1f4c17265a79710783783"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  // Global Firebase exports for use in functions
+  window.firebaseAuth = auth;
+  window.firebaseDB = db;
+  window.firebaseCreateUser = createUserWithEmailAndPassword;
+  window.firebaseLoginUser = signInWithEmailAndPassword;
+  window.firebaseSet = set;
+  window.firebaseRef = ref;
+  window.firebasePush = push;
+  window.firebaseOnValue = onValue;
+</script>
+
 </head>
 <body>
     <div class="container">
@@ -382,9 +416,8 @@
                     <label>Password</label>
                     <input type="password" id="signupPassword" placeholder="Create a password">
                 </div>
-                <button class="btn" onclick="customSignup()">Create Account</button>
-                <button class="btn" onclick="customLogin()">Login</button>
-
+                <button class="btn" onclick="signup()">Create Account</button>
+                <button class="btn btn-secondary" onclick="showLogin()">Back to Login</button>
             </div>
         </div>
 
@@ -570,17 +603,26 @@
             </div>
 
             <button class="btn" onclick="submitPayment()">Submit Payment</button>
-
+            <div class="form-group">
+            <label>Withdraw Method</label>
+           <select id="withdrawMethod">
+           <option value="">Select Method</option>
+          <option value="easypaisa">EasyPaisa</option>
+          <option value="jazzcash">JazzCash</option>
+          </select>
+          </div>
             <div style="margin-top: 30px;">
                 <h3>Withdraw Funds</h3>
                 <div class="form-group">
                     <label>Account Name</label>
                     <input type="text" id="withdrawName" placeholder="Enter account name">
                 </div>
+                
                 <div class="form-group">
-                    <label>Account Number</label>
-                    <input type="text" id="withdrawNumber" placeholder="Enter account number">
+                <label>Account Number</label>
+                <input type="text" id="withdrawNumber" placeholder="Enter account number">
                 </div>
+
                 <div class="form-group">
                     <label>Amount (Min Rs 300)</label>
                     <input type="number" id="withdrawAmount" placeholder="Enter amount" min="300">
@@ -709,82 +751,63 @@ function showSignup() {
     document.getElementById('signupForm').style.display = 'block';
 }
 
-const airtableToken = "patR009hqodm26jPN.cf62731e0a1ff1d33760898419672f7d04a1a47d6df2ec61aecb3a65f5dd2465";
-const baseId = "appXhk2POe7vfktXX";  // ✅ this is correct from your screenshot
-const tableName = "USER";             // ✅ match your actual Airtable table name
 
-async function saveUserToAirtable(name, email, password) {
-  const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${airtableToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      records: [
-        {
-          fields: {
-            "Name": name,
-            "Email": email,
-            "Password": password
-          }
-        }
-      ]
-    })
-  });
-
-  if (response.ok) {
-    alert("✅ Account created successfully!");
-    showLogin();
-  } else {
-    const errorData = await response.json();
-    console.error("Airtable error:", errorData);
-    alert("❌ Error creating account: " + errorData.error.message);
-  }
-}
-
-
-function customSignup() {
-  const name = document.getElementById('signupName').value.trim();
-  const email = document.getElementById('signupEmail').value.trim();
-  const password = document.getElementById('signupPassword').value.trim();
+function signup() {
+  const name = document.getElementById('signupName').value;
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
 
   if (name && email && password) {
-    saveUserToAirtable(name, email, password);
+    firebaseCreateUser(firebaseAuth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        // Save extra user info to database
+        const uid = user.uid;
+        firebaseSet(firebaseRef(firebaseDB, 'users/' + uid), {
+          name: name,
+          email: email,
+          balance: 0,
+          totalOrders: 0,
+          totalEarnings: 0,
+          completedTasks: 0,
+          earnedToday: 0
+        });
+        alert("Account created successfully. Please login.");
+        showLogin();
+      })
+      .catch((error) => {
+        alert("Signup error: " + error.message);
+      });
   } else {
-    alert("Please fill in all fields");
+    alert('Please fill in all fields');
   }
 }
 
-async function customLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value.trim();
+function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
 
-  if (!email || !password) {
-    alert("Please enter email and password");
-    return;
-  }
+  firebaseLoginUser(firebaseAuth, email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      const uid = user.uid;
 
-  const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=AND({Email}='${email}', {Password}='${password}')`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Authorization": `Bearer ${airtableToken}`
-    }
-  });
-
-  const data = await response.json();
-
-  if (data.records && data.records.length > 0) {
-    const user = data.records[0].fields;
-    userData.name = user.Name;
-    userData.email = user.Email;
-    alert("✅ Login successful. Welcome " + userData.name);
-    showScreen('dashboardScreen');
-  } else {
-    alert("❌ Invalid email or password");
-  }
+      // Load user data from Firebase
+      firebaseOnValue(firebaseRef(firebaseDB, 'users/' + uid), (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          userData = data;
+          updateUserData();
+          showScreen('dashboardScreen');
+          generateTasks();
+        }
+      });
+    })
+    .catch((error) => {
+      alert("Login failed: " + error.message);
+    });
 }
+
 
 function updateUserData() {
     document.getElementById('userName').textContent = userData.name;
@@ -862,6 +885,7 @@ function submitPayment() {
     document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
     userData.totalOrders++;
     updateUserData();
+    firebaseSet(firebaseRef(firebaseDB, 'users/' + firebaseAuth.currentUser.uid), userData);
     document.getElementById('transactionId').value = '';
     document.getElementById('screenshot').value = '';
     document.getElementById('fileUploadText').textContent = '📷 Click to upload screenshot';
@@ -911,6 +935,10 @@ function renderTasks() {
         if (task.completed) return;
         const div = document.createElement('div');
         div.className = 'task-card';
+
+        const fileInputId = `screenshot-${task.id}`;
+        const buttonId = `complete-btn-${task.id}`;
+
         div.innerHTML = `
             <div class="task-header">
                 <strong>${task.platform} - ${task.service}</strong>
@@ -919,10 +947,47 @@ function renderTasks() {
             <p>🔗 <a href="${task.link}" target="_blank">${task.link}</a></p>
             <div class="form-group">
                 <label>Upload Screenshot</label>
-                <input type="file" accept="image/*" onchange="submitTask(this, ${task.id})">
+                <input type="file" accept="image/*" id="${fileInputId}">
             </div>
+            <button class="btn" id="${buttonId}" style="display:none;">✅ Complete Task</button>
         `;
+
         tasksList.appendChild(div);
+
+        // Add event listener for screenshot input
+        const fileInput = document.getElementById(fileInputId);
+        const completeBtn = document.getElementById(buttonId);
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                completeBtn.style.display = 'block';
+            }
+        });
+
+        // Complete button click
+      completeBtn.addEventListener('click', () => {
+    // Update local user data
+    task.completed = true;
+    userData.completedTasks++;
+    userData.earnedToday += task.reward;
+    userData.balance += task.reward;
+
+    updateUserData();
+    alert('✅ Task submitted successfully! Rs 1 added to your balance.');
+
+    // 🔥 Delete task from Firebase (so no one else sees it)
+    firebaseRemove(firebaseRef(firebaseDB, 'tasks/' + task.id))
+      .then(() => {
+        renderTasks(); // Refresh task list
+      })
+      .catch((err) => {
+        alert("❌ Error removing task: " + err.message);
+      });
+
+    // 🔄 Save updated balance & stats to Firebase
+    firebaseSet(firebaseRef(firebaseDB, 'users/' + firebaseAuth.currentUser.uid), userData);
+});
+
     });
 }
 
@@ -945,25 +1010,46 @@ function submitTask(input, taskId) {
 
 function requestWithdraw() {
     const name = document.getElementById('withdrawName').value;
+    const method = document.getElementById('withdrawMethod').value;
     const number = document.getElementById('withdrawNumber').value;
     const amount = parseInt(document.getElementById('withdrawAmount').value);
-    if (!name || !number || !amount || amount < 300) {
+    
+    if (!name || !method || !number || !amount || amount < 300) {
         alert('Please fill in all fields. Minimum withdrawal is Rs 300.');
         return;
     }
+
     if (amount > userData.balance) {
         alert('Insufficient balance');
         return;
     }
-    userData.balance -= amount;
-    updateUserData();
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.innerHTML = '✅ Withdrawal request submitted! Amount will be transferred within 30 minutes.';
-    document.getElementById('paymentScreen').insertBefore(notification, document.getElementById('paymentScreen').firstChild);
-    document.getElementById('withdrawName').value = '';
-    document.getElementById('withdrawNumber').value = '';
-    document.getElementById('withdrawAmount').value = '';
+
+    const data = {
+        name: name,
+        method: method,
+        number: number,
+        amount: amount,
+        status: "pending",
+        date: new Date().toISOString()
+    };
+
+    // 🔁 Firebase Save
+    firebasePush(firebaseRef(firebaseDB, "withdrawals"), data)
+        .then(() => {
+            alert("✅ Withdrawal request submitted and saved to Firebase!");
+            userData.balance -= amount;
+            updateUserData();
+            firebaseSet(firebaseRef(firebaseDB, 'users/' + firebaseAuth.currentUser.uid), userData);
+
+            // Reset form
+            document.getElementById('withdrawName').value = '';
+            document.getElementById('withdrawMethod').value = '';
+            document.getElementById('withdrawNumber').value = '';
+            document.getElementById('withdrawAmount').value = '';
+        })
+        .catch((err) => {
+            alert("❌ Failed to save request: " + err.message);
+        });
 }
 
 function logout() {
