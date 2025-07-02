@@ -846,26 +846,38 @@ function selectService(platform) {
     const serviceSelect = document.getElementById('serviceType');
     serviceSelect.innerHTML = '<option value="">Select Service</option>';
     if (platform === 'youtube') {
-        serviceSelect.innerHTML += '<option value="subscriber">1 Subscriber - Rs 1</option>';
-        serviceSelect.innerHTML += '<option value="like">10 Likes - Rs 1</option>';
+        serviceSelect.innerHTML += '<option value="subscriber">1 Subscriber - Rs 2</option>';
+        serviceSelect.innerHTML += '<option value="like">5 Likes - Rs 1</option>';
     } else {
-        serviceSelect.innerHTML += '<option value="follower">1 Follower - Rs 1</option>';
-        serviceSelect.innerHTML += '<option value="like">10 Likes - Rs 1</option>';
+        serviceSelect.innerHTML += '<option value="follower">1 Follower - Rs 2</option>';
+        serviceSelect.innerHTML += '<option value="like">5 Likes - Rs 1</option>';
     }
     currentOrder.platform = platform;
 }
 
 function calculateTotal() {
     const quantity = parseInt(document.getElementById('quantity').value) || 0;
-    const total = quantity * 1;
+    const service = document.getElementById('serviceType').value;
+
+    let rate = 0;
+
+    if (service === 'follower' || service === 'subscriber') {
+        rate = 2; // Rs 2 per 1 follower/subscriber
+    } else if (service === 'like') {
+        rate = 1 / 5; // Rs 1 per 5 likes
+    }
+
+    const total = Math.ceil(quantity * rate); // Round up to next full rupee
     document.getElementById('totalPrice').textContent = total;
+
     currentOrder.quantity = quantity;
     currentOrder.total = total;
 }
 
+
 function proceedToPayment() {
     const link = document.getElementById('accountLink').value;
-    const service = document.getElementById('serviceType').value;
+    const srvice = document.getElementById('serviceType').value;
     const quantity = parseInt(document.getElementById('quantity').value);
     if (!link || !service || !quantity) {
         alert('Please fill in all fields');
@@ -989,11 +1001,7 @@ function renderTasks() {
     userData.balance += task.reward;
 
     updateUserData();
-   alert('✅ Task submitted successfully! Rs 1 added to your balance.');
-setTimeout(() => {
-  showScreen('earningsScreen');
-}, 300);  // Delay 0.3 second to override any accidental jump
-
+    alert('✅ Task submitted successfully! Rs 1 added to your balance.');
 
     // 🔥 Delete task from Firebase (so no one else sees it)
     firebaseRemove(firebaseRef(firebaseDB, 'tasks/' + task.id))
@@ -1025,7 +1033,6 @@ function submitTask(input, taskId) {
         updateUserData();
         renderTasks();
         alert('✅ Task submitted successfully! Rs 1 added to your balance.');
-
     }
 }
 
