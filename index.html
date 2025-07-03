@@ -877,17 +877,34 @@ function calculateTotal() {
 
 function proceedToPayment() {
     const link = document.getElementById('accountLink').value;
-    const srvice = document.getElementById('serviceType').value;
+    const service = document.getElementById('serviceType').value;
     const quantity = parseInt(document.getElementById('quantity').value);
+
     if (!link || !service || !quantity) {
         alert('Please fill in all fields');
         return;
     }
+
     currentOrder.link = link;
     currentOrder.service = service;
+    currentOrder.quantity = quantity;
+
+    // Calculate total again (just to be safe)
+    let rate = 0;
+    if (service === 'follower' || service === 'subscriber') {
+        rate = 2;
+    } else if (service === 'like') {
+        rate = 1 / 5;
+    }
+    currentOrder.total = Math.ceil(quantity * rate);
+
+    // Set payment amount on screen
     document.getElementById('paymentAmount').textContent = currentOrder.total;
+
+    // Switch to payment screen
     showScreen('paymentScreen');
 }
+
 
 function selectPaymentMethod(method) {
     document.querySelectorAll('.payment-method').forEach(pm => pm.classList.remove('selected'));
